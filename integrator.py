@@ -23,8 +23,8 @@ theta_lower = 0
 theta_upper = 2*np.pi
 result = integrate.dblquad(P, r_lower, r_upper, theta_lower, theta_upper)
 
-print(prefactor * result[0])
-print(result[1])
+print("Result : ", prefactor * result[0])
+print(" Numerical Error : ", result[1])
 
   
 
