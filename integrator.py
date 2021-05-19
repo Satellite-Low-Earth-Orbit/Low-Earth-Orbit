@@ -12,9 +12,8 @@ sigma_x = 3.
 sigma_z = 3.
 phi = np.pi/2.
 x_e = 0.584
-x_es = np.linspace(0, 21.5, 500)
-r_a = 0.01
-r_as = np.linspace(0.01, 0.2, 6)
+#x_es = np.linspace(0, 21.5, 500)
+#r_a = 0.01
 
 prefactor = 0.
 
@@ -32,13 +31,11 @@ S = 2*np.pi*orbit_r / N  # spacing between the satellites in the cluster
 # --------- Set upper and lower bounds for double integral
 
 r_lower = 0
-r_upper = r_a
+#r_upper = r_a
 theta_lower = 0
 theta_upper = 2*np.pi
 
 #-------------------------------------
-
-
 
 # Integrand of the integral for the probability
 def P(r,theta):
@@ -46,11 +43,12 @@ def P(r,theta):
   return r * np.exp(-0.5*r**2 * ((np.sin(theta) / sigma_x)**2 + (np.cos(theta) / sigma_z)**2 ) + r*x_e * ( (np.sin(phi) * np.sin(theta)/ sigma_x**2) + (np.cos(phi) * np.cos(theta) / sigma_z**2) ) )
   
 # Monte Carlo averaging for range [0,S/2]
-def prob_collision():
+# returns E(P | x_E ~ U([0,S/2]))
+def prob_collision(r_upper):
   
   # -------- Monte Carlo sampling -----------
   
-  n_samples = 100000
+  n_samples = 10000
   x_e_samples = np.random.uniform(size=n_samples) * S/2.0
   temp = 0.
   
@@ -63,17 +61,13 @@ def prob_collision():
     temp += prefactor * integrate.dblquad(P, r_lower, r_upper, theta_lower, theta_upper)[0]
   
   return temp/n_samples
-  
-#E(P | x_E ~ U([0,S/2]))
 
   
 # Probability of expensive satellite not crashing for a full day
 
 def p_survival_per_day(prob_collision):
 
-  n_encounters_per_day = 72 * 2./(T / (60. * 60. * 24.) )
-  
-  print(n_encounters_per_day)
+  n_encounters_per_day = 72.0 * 2./(T / (60. * 60. * 24.) )
   
   p_survival_per_day = (1 - prob_collision) ** n_encounters_per_day
 
@@ -84,8 +78,46 @@ def p_survival_per_day(prob_collision):
 def p_survival_per_year(p_survival_per_day):
 
   return p_survival_per_day ** 365.
+  
+# Return how probability of survival changes over time
 
-p_survival_per_day(0.1)
+def p_survival_time(prob_collision):
+
+  n_encounters_per_day = 72.0 * 2./(T / (60. * 60. * 24.) )
+
+  temp = np.zeros(730)
+  temp[0] = (1.0-prob_collision) ** n_encounters_per_day
+  for i in range(1,730):
+    temp[i] = temp[i-1]*(1.0-prob_collision)** n_encounters_per_day
+  return temp
+  
+
+"""
+# ----------- Code to create plot of P of survival with time for different r_as
+
+r_as = np.linspace(0.01, 0.2, 6)
+results = np.zeros_like(r_as)
+
+probs = [2.603378895447041e-07, 8.766767906667571e-07, 1.7487943083133687e-06, 3.1217468772035935e-06, 4.597813217e-06, 6.418341528451043e-06]
+
+for j, ra in enumerate(r_as):
+  prob = probs[j]
+  day = p_survival_per_day(prob)
+  results[j] = p_survival_per_year(day)
+  plt.plot(np.arange(1,731,1), p_survival_time(prob), label="$r_a$ = "+str(np.round(ra,2)))
+  
+plt.legend()
+plt.xlabel("Time [Days]")
+plt.ylabel("P$_{survival}$")
+plt.show()
+  
+
+  
+plt.plot(r_as, results)
+plt.xlabel("$r_{a}$")
+plt.ylabel("P$_{survival}$ after 1 year")
+plt.show()
+
 
 
 
@@ -108,7 +140,6 @@ plt.ylabel("P")
 plt.legend()
 plt.show()
 
-"""
 
 # Code of colourplot for sigma sensitivity
 
