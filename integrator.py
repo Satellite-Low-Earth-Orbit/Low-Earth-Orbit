@@ -88,7 +88,7 @@ def p_survival_time(prob_collision):
   temp = np.zeros(730)
   temp[0] = (1.0-prob_collision) ** n_encounters_per_day
   for i in range(1,730):
-    temp[i] = temp[i-1]*(1.0-prob_collision)** n_encounters_per_day
+    temp[i] = temp[i-1]*temp[0]
   return temp
   
 
